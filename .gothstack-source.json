@@ -1,11 +1,13 @@
 {
   "schema": 1,
-  "source_commit": "00160b6d5d210b522fdd3572d15c71be80dc4116",
+  "source_commit": "74d77f8677c52e9ba7a5f1b94a632f93a1ae05cb",
   "files_sha256": {
-    "README.md": "53919ce05efbc5ce30711c0984a1cd93cec8506851698319f7bbd9736a4b8e4b",
+    "README.md": "3c69ee417f60e3a2795e1a619c6b409704ae046261f1e3d153daac3fcf53ca3e",
     "go.mod": "81716f0e8f7c6a9bb1a8eb8d2b3f4174d8eac5594a18077ee1bf1655622980c3",
     "go.sum": "4fcba4e0b768a4c4166473043681c1a966fe2e6b114593ba20a4567d9f6c400a",
-    "goth/main.go": "dd01f869ca65dd8d9ffa2c602d26f61e0b4492e69682fb5949e37482808c62a9",
+    "goth/doctor.go": "566ec4719baec934e6f19917a7a2b77295085009f29519aa99a9abfffa219d14",
+    "goth/doctor_test.go": "e800a937d2dd245d8bfae3ba14277103bae78079563a456c2393eef23bc81f16",
+    "goth/main.go": "f2bd616ad63a3a8efb55e1d3547f6568c7f143534e389b728eff204bc45661ef",
     "goth/main_test.go": "332fbe3b6b9cc6e1038114178417d61ecb617b3c6774252f5324110c0663cd95",
     "internal/credentials/files_unix.go": "facd6e4a500c449abf4d598d68fa383162653e3e50c9e9f06dd016b1a96f59f8",
     "internal/credentials/files_windows.go": "cf14b57bb5ba973602496d2f4915b893ee4afee6fe120fd75a11293f1ac8ac91",
@@ -13,7 +15,13 @@
     "internal/credentials/keychain_test.go": "25fb8bd72a65ab836c657369b91968df2eafc34ff685bec76d66db167259867c",
     "internal/credentials/store.go": "c9fd93460ef76f7090d2b255ebb6bd72af28f69151385b6e311ada55bcaf32d0",
     "internal/credentials/store_test.go": "b0da82a148fbc7ac09e9239623fe0c2245aa642411fb074e32203c6cfa8a368f",
-    "internal/device/client.go": "e2c116f9c470600548ca615b08f8384e9185f0e7bd33f1fc4968909d79adddea",
-    "internal/device/client_test.go": "9e62db5acecfdb570d9638ebbdb7955c925e04a77f590667aca43a9448a41672"
+    "internal/device/client.go": "9c7899e92d071ab1690b0d1b594a05c706c94d167b91276d21990a5c202d7dae",
+    "internal/device/client_test.go": "9e62db5acecfdb570d9638ebbdb7955c925e04a77f590667aca43a9448a41672",
+    "internal/device/doctor.go": "b24dca047b251c6fbb2211098888c8eebf5fd65f9ab9ce39094fcf89e4ed79ed",
+    "internal/device/doctor_test.go": "978bcb6f81db5bd9a0b40de8b83f2fdea53ac2d5073e73cad92dc81de32c4dce",
+    "internal/doctor/process_unix.go": "154e882b8c1b97d281474c83adbf5e216a1f2e6d5310752100c77fb3717a0a59",
+    "internal/doctor/process_windows.go": "b0c15e2310cc6bd5c0b4a0c3cfc12d4a514309b3a1d4bcf38ec94e781a9ef078",
+    "internal/doctor/report.go": "06539375f29670f202f0c069f533db90b41ac14c78886c01884f0ce561befcdf",
+    "internal/doctor/report_test.go": "4bf714699055533e055fa960065de2b6f3b3c2238a9eb50f23b8e8adea92ad9c"
   }
 }

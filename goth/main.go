@@ -16,6 +16,7 @@ import (
 
 	"gothstack.com/cli/internal/credentials"
 	"gothstack.com/cli/internal/device"
+	"gothstack.com/cli/internal/doctor"
 )
 
 // Release builds set this to git describe --tags --long --dirty.
@@ -38,7 +39,7 @@ func main() {
 }
 func run(ctx context.Context, args []string, out, stderr io.Writer, keychain credentials.Keychain) int {
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
-		fmt.Fprintln(out, "Usage: goth login [--server https://gothstack.com] [--label name] [--storage auto|file] [--config-dir path] [--replace]\n       goth version\n\nConnect a terminal by reviewing its code in your browser. No browser opens automatically.\n--replace overwrites local credentials; it does not revoke earlier server access.")
+		fmt.Fprintln(out, "Usage: goth login [--server https://gothstack.com] [--label name] [--storage auto|file] [--config-dir path] [--replace]\n       goth doctor [--local] [--server https://gothstack.com] [--storage auto|file] [--config-dir path]\n       goth version\n\nConnect a terminal by reviewing its code in your browser. No browser opens automatically.\n--replace overwrites local credentials; it does not revoke earlier server access.")
 		return 0
 	}
 	if args[0] == "version" && len(args) == 1 {
@@ -50,6 +51,9 @@ func run(ctx context.Context, args []string, out, stderr io.Writer, keychain cre
 		}
 		fmt.Fprintln(out, "goth "+v)
 		return 0
+	}
+	if args[0] == "doctor" {
+		return runDoctor(ctx, args[1:], out, stderr, keychain, doctor.Collect)
 	}
 	if args[0] != "login" {
 		fmt.Fprintln(stderr, "Unknown command. Run goth help.")

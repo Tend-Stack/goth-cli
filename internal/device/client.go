@@ -28,8 +28,8 @@ const ClientID = "goth-cli"
 const Scope = "cli:checks cli:evidence cli:doctor"
 
 var (
-	ErrProtocol    = errors.New("the login service returned an invalid response")
-	ErrUnavailable = errors.New("the login service is unavailable; try again later")
+	ErrProtocol    = errors.New("the server returned an invalid response")
+	ErrUnavailable = errors.New("the server is unavailable; try again later")
 	ErrExpired     = errors.New("the device code expired; run goth login again")
 	ErrDenied      = errors.New("the connection was denied; no credential was saved")
 	ErrConsumed    = errors.New("the device request is no longer available; run goth login again")
@@ -187,6 +187,10 @@ func Decode(raw []byte, out any) error {
 	return nil
 }
 func (c *Client) request(ctx context.Context, path string, payload any) (int, []byte, int, error) {
+	return c.requestBearer(ctx, path, payload, "")
+}
+
+func (c *Client) requestBearer(ctx context.Context, path string, payload any, bearer string) (int, []byte, int, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return 0, nil, 0, ErrProtocol
@@ -198,6 +202,9 @@ func (c *Client) request(ctx context.Context, path string, payload any) (int, []
 	r.Header.Set("Accept", MediaType)
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("User-Agent", "goth-cli")
+	if bearer != "" {
+		r.Header.Set("Authorization", "Bearer "+bearer)
+	}
 	response, err := c.http.Do(r)
 	if err != nil {
 		if ctx.Err() != nil {

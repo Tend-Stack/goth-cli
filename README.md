@@ -1,6 +1,6 @@
 # goth terminal client
 
-This Go module implements device-code login. Its public repository is a generated
+This Go module implements device-code login and toolchain diagnostics. Its public repository is a generated
 CLI-only source export; application code, private history and deployment files
 are excluded. Development remains in the authoritative GoTHStack workspace. The application's CLI
 routes remain disabled in production while T5.5's remaining commands and release
@@ -10,6 +10,7 @@ acceptance are completed. Browser approval never runs learner code.
 go install gothstack.com/cli/goth@latest
 goth version
 goth login
+goth doctor
 ```
 
 Requires Go 1.27.3 or later. The public vanity metadata points to
@@ -58,6 +59,28 @@ bounded responses and a 30-second timeout. The credential's fixed scope is
 checks/evidence/doctor, with no browser or administrator authority. Local file
 permissions do not protect against malware running as the same OS user.
 
+## Toolchain diagnostics
+
+`goth doctor` runs fixed version probes for Go, Git, Templ, Wails v3 and Java,
+reads bounded Android SDK/NDK metadata, and checks Xcode on macOS. It prints
+versions and gaps, then saves one current report to your private connected-terminal
+settings. Go and Git are starting tools; the others are needed as lessons introduce
+them. No tool installation, project build, shell script or lesson code is run.
+
+Use `goth doctor --local` to print without accessing credentials or uploading.
+Connected mode accepts the same `--server`, `--storage` and `--config-dir` options
+as login. It requires an existing unexpired credential and never logs in silently.
+Uploads contain only schema, platform, collection time and eight fixed tool/status/
+version entries. No host name, project path, environment values or raw output is
+included. The server validates independently, rate limits updates, and removes
+the report when access is revoked. Reports are diagnostic claims, not attestation.
+
+Each version process has a five-second timeout and 8 KiB output limit. Collection
+has a 45-second context; SDK metadata reads have byte/entry bounds (not a guarantee
+against arbitrary operating-system filesystem stalls). Installed executables run
+as your OS user; this is not a sandbox for malicious tools. Native Windows process-
+tree cancellation and macOS/Windows toolchain acceptance remain release gates.
+
 ## Development checks
 
 In the full GoTHStack workspace, root `make check` includes this module's tests,
@@ -82,6 +105,6 @@ go -C cli build -o ../tests/results/goth-client ./goth
 GOTH_CLI_BINARY=tests/results/goth-client python3 -B scripts/browser_cli_check.py /usr/bin/firefox
 ```
 
-`doctor`, `start`, `check`, signed evidence, prebuilt release archives and full M5
+`start`, `check`, signed evidence, prebuilt release archives and full M5
 security acceptance remain roadmap work. CLI signatures authenticate an account;
 they are never execution attestation.
