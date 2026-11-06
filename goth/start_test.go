@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"net/netip"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -54,7 +56,7 @@ func TestStartActualServer(t *testing.T) {
 	s.Close()
 	for _, ref := range []string{"05.1", "cli-course/05.1"} {
 		var out, stderr bytes.Buffer
-		code := run(t.Context(), []string{"start", ref, "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &out, &stderr, keychain)
+		code := runActualCLI(t, []string{"start", ref, "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &out, &stderr, keychain)
 		if code != 0 || !strings.Contains(out.String(), "Starter files are ready") {
 			t.Fatal(code, out.String(), stderr.String())
 		}
@@ -86,8 +88,12 @@ func TestStartActualServer(t *testing.T) {
 	}
 	w.Close()
 	var checkOut, checkErr bytes.Buffer
-	if code := run(t.Context(), []string{"check", "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &checkOut, &checkErr, keychain); code != 0 || !strings.Contains(checkOut.String(), "Evidence saved:") {
+	if code := runActualCLI(t, []string{"check", "05.1", "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &checkOut, &checkErr, keychain); code != 0 || !strings.Contains(checkOut.String(), "Evidence saved:") {
 		t.Fatal("real check command", code, checkOut.String(), checkErr.String())
+	}
+	var mismatchOut, mismatchErr bytes.Buffer
+	if code := runActualCLI(t, []string{"check", "other/lesson", "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &mismatchOut, &mismatchErr, keychain); code != 1 || !strings.Contains(mismatchErr.String(), workspace.ErrNotStarted.Error()) || mismatchOut.Len() != 0 {
+		t.Fatal("wrong lesson reached execution", code, mismatchOut.String(), mismatchErr.String())
 	}
 	for _, secret := range []string{grant.AccessToken, grant.SigningSecret} {
 		if strings.Contains(checkOut.String()+checkErr.String(), secret) {
@@ -106,7 +112,7 @@ func TestStartActualServer(t *testing.T) {
 		t.Fatal(e)
 	}
 	var out, stderr bytes.Buffer
-	code := run(t.Context(), []string{"start", "05.1", "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &out, &stderr, keychain)
+	code := runActualCLI(t, []string{"start", "05.1", "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &out, &stderr, keychain)
 	if code != 1 || !strings.Contains(stderr.String(), "conflict") {
 		t.Fatal("learner conflict", code, stderr.String())
 	}
@@ -114,4 +120,29 @@ func TestStartActualServer(t *testing.T) {
 	if e != nil || string(b) != "my saved work" {
 		t.Fatal("learner edit lost")
 	}
+}
+
+// Acceptance can supply a checksum-verified installed executable. Ordinary CI
+// exercises the same command entrypoint inside this independently built module.
+func runActualCLI(t *testing.T, args []string, out, stderr *bytes.Buffer, keychain credentials.Keychain) int {
+	t.Helper()
+	binary := os.Getenv("GOTHSTACK_CLI_TEST_BINARY")
+	if binary == "" {
+		return run(t.Context(), args, out, stderr, keychain)
+	}
+	if !filepath.IsAbs(binary) {
+		t.Fatal("installed CLI path must be absolute")
+	}
+	cmd := exec.CommandContext(t.Context(), binary, args...)
+	cmd.Stdout, cmd.Stderr = out, stderr
+	err := cmd.Run()
+	if err == nil {
+		return 0
+	}
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
+		return exit.ExitCode()
+	}
+	t.Fatal("could not execute installed CLI", err)
+	return 1
 }

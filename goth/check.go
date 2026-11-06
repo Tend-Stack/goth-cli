@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"gothstack.com/cli/internal/credentials"
@@ -23,8 +24,17 @@ func runCheck(ctx context.Context, args []string, out, stderr io.Writer, keychai
 	config := flags.String("config-dir", "", "private configuration directory")
 	dir := flags.String("workspace", ".", "previously started workspace")
 	probe := flags.String("probe-url", "", "explicit literal-loopback URL and port for HTTP checks")
-	if flags.Parse(args) != nil || flags.NArg() != 0 {
-		fmt.Fprintln(stderr, "Usage: goth check [--workspace path] [--probe-url http://127.0.0.1:8080] [--server origin] [--storage auto|file] [--config-dir path]")
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		args = append(append([]string{}, args[1:]...), args[0])
+	}
+	if flags.Parse(args) != nil || flags.NArg() > 1 {
+		fmt.Fprintln(stderr, "Usage: goth check [05.1|course/lesson] [--workspace path] [--probe-url http://127.0.0.1:8080] [--server origin] [--storage auto|file] [--config-dir path]")
+		return 2
+	}
+	ref := flags.Arg(0)
+	requestedCourse, requestedSlug, canonical := strings.Cut(ref, "/")
+	if ref != "" && (canonical && (!plan.ValidSlug(requestedCourse) || !plan.ValidSlug(requestedSlug)) || !canonical && !plan.ValidLessonCode(ref)) {
+		fmt.Fprintln(stderr, "Use a curriculum code such as 05.1 or the canonical course/lesson reference.")
 		return 2
 	}
 	client, err := device.New(*server)
@@ -62,9 +72,22 @@ func runCheck(ctx context.Context, args []string, out, stderr io.Writer, keychai
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-	reviewed, err := client.FetchPlan(ctx, credential.AccessToken, course, slug)
+	var reviewed plan.Lesson
+	if ref != "" && !canonical {
+		reviewed, err = client.FetchCode(ctx, credential.AccessToken, ref)
+	} else {
+		if canonical && (requestedCourse != course || requestedSlug != slug) {
+			fmt.Fprintln(stderr, workspace.ErrNotStarted)
+			return 1
+		}
+		reviewed, err = client.FetchPlan(ctx, credential.AccessToken, course, slug)
+	}
 	if err != nil {
 		fmt.Fprintln(stderr, err)
+		return 1
+	}
+	if reviewed.CourseSlug != course || reviewed.LessonSlug != slug {
+		fmt.Fprintln(stderr, workspace.ErrNotStarted)
 		return 1
 	}
 	fmt.Fprintf(out, "Lesson: %s/%s (version %d)\nRunning local checks as your OS user. Project code can access your files and network.\n", course, slug, reviewed.LessonVersion)

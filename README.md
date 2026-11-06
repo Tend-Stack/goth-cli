@@ -182,12 +182,13 @@ they are never execution attestation.
 ### Run checks for a started workspace
 
 ```sh
-goth check --workspace ./pocketpilot
+goth check 05.1 --workspace ./pocketpilot
 # For a lesson with HTTP probes, start your app yourself and select its loopback URL:
 goth check --workspace ./pocketpilot --probe-url http://127.0.0.1:8080
 ```
 
-The command uses the lesson saved by `goth start` and fetches fresh authorization
+The optional lesson reference must match the started workspace; omitting it uses
+the lesson saved by `goth start`. The command fetches fresh authorization
 before executing. It runs project code as your OS user, with access to your files
 and network; this is not a sandbox. It requires an existing started workspace.
 Use `--server`, `--storage` and `--config-dir` as with login/start.
