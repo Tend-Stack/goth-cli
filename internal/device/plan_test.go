@@ -116,6 +116,10 @@ func TestPlanActualServer(t *testing.T) {
 	}
 	defer c.Close()
 	token := os.Getenv("GOTHSTACK_CLI_TEST_TOKEN")
+	resolved, err := c.FetchCode(t.Context(), token, "05.1")
+	if err != nil || resolved.LessonCode != "05.1" || resolved.CourseSlug != "cli-course" {
+		t.Fatal("code resolution", err)
+	}
 	p, err := c.FetchPlan(t.Context(), token, "cli-course", "05.1")
 	if err != nil {
 		t.Fatal(err)

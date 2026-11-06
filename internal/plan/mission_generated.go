@@ -12,6 +12,9 @@ import (
 )
 
 var digestPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
+var lessonCodePattern = regexp.MustCompile(`^[0-9]{2}\.[1-9][0-9]?$`)
+
+func ValidLessonCode(s string) bool { return lessonCodePattern.MatchString(s) }
 
 // Mission is the authored local_mission payload. Its reference pins an immutable
 // definition; evidence names are instructions, never a claim of completion.

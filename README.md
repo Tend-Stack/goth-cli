@@ -1,6 +1,6 @@
 # goth terminal client
 
-This Go module implements device-code login and toolchain diagnostics. Its public repository is a generated
+This Go module implements device-code login, toolchain diagnostics and lesson workspace preparation. Its public repository is a generated
 CLI-only source export; application code, private history and deployment files
 are excluded. Development remains in the authoritative GoTHStack workspace. The application's CLI
 routes remain disabled in production while T5.5's remaining commands and release
@@ -11,6 +11,7 @@ go install gothstack.com/cli/goth@latest
 goth version
 goth login
 goth doctor
+goth start 05.1 --workspace ./pocketpilot
 ```
 
 Requires Go 1.27.3 or later. The public vanity metadata points to
@@ -81,6 +82,44 @@ against arbitrary operating-system filesystem stalls). Installed executables run
 as your OS user; this is not a sandbox for malicious tools. Native Windows process-
 tree cancellation and macOS/Windows toolchain acceptance remain release gates.
 
+## Start a lesson
+
+`goth start 05.1 --workspace ./pocketpilot` resolves an unambiguous published
+curriculum code. Community courses use `goth start course/lesson`. The command
+accepts login's `--server`, `--storage` and `--config-dir` options. Without
+`--workspace`, it uses the validated plan's project name in the current directory.
+Git 2.48 or newer is required. Git and its local repository configuration are trusted
+local tools; this command is not a sandbox for a malicious Git installation.
+
+The command checks the plan and local files, confirms the exact lesson version
+with your account, selects `goth-<lesson-id>-v<version>`, then writes starter files.
+It does not check out another commit, change the index, make commits, fetch, push,
+run hooks or execute project code. An existing lesson branch must point at the
+current commit; switch to it yourself if it differs. Staged and unstaged work stay
+in place. Linked Git worktrees and symlinked `.git` directories are not supported.
+
+New files can be created, and unchanged starters can be updated. Different
+unknown files, edited or deleted starters, readonly files and path collisions
+stop preparation. Files omitted by a later lesson are retained. Close editors and
+avoid other Git operations while starting: the process lock coordinates `goth`,
+not unrelated programs, and portable filesystem operations cannot eliminate every
+external write race. Check Git status after preparation before continuing work.
+
+Metadata and starter baselines live under `.git/gothstack/`, outside tracked
+project files, without credentials. A bounded recovery journal stores before/after
+contents while writing. Interrupted updates are completed if every final snapshot
+matches, otherwise rolled back only when each file still matches a recorded
+snapshot. Conflicting edits or corrupt recovery data are preserved and reported;
+keep the journal for manual recovery. Retrying `goth start` attempts recovery first.
+Empty directories may remain after rollback. Do not delete the Git directory as
+cleanup: it also contains your repository and any pending recovery data.
+
+A confirmed server start followed by a local failure is reported explicitly.
+Starting awards no completion credit. Native Linux filesystem/Git behavior is
+tested; macOS/Windows native acceptance remains pending. Cross-builds do not prove
+Windows ACLs, directory-flush durability, reparse-point handling or process-tree
+cancellation. Production terminal routes remain disabled until acceptance.
+
 ## Development checks
 
 In the full GoTHStack workspace, root `make check` includes this module's tests,
@@ -105,6 +144,6 @@ go -C cli build -o ../tests/results/goth-client ./goth
 GOTH_CLI_BINARY=tests/results/goth-client python3 -B scripts/browser_cli_check.py /usr/bin/firefox
 ```
 
-`start`, `check`, signed evidence, prebuilt release archives and full M5
+`check`, signed evidence, prebuilt release archives and full M5
 security acceptance remain roadmap work. CLI signatures authenticate an account;
 they are never execution attestation.

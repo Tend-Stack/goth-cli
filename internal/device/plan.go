@@ -24,6 +24,18 @@ func (c *Client) FetchPlan(ctx context.Context, bearer, course, slug string) (pl
 	return planResult(status, body, course, slug)
 }
 
+func (c *Client) FetchCode(ctx context.Context, bearer, code string) (plan.Lesson, error) {
+	raw, ok := strings.CutPrefix(bearer, "gs_cli_")
+	if !ok || !ValidSecret(raw) || !plan.ValidLessonCode(code) {
+		return plan.Lesson{}, ErrProtocol
+	}
+	status, body, _, err := c.requestJSON(ctx, http.MethodGet, "/api/cli/lessons/"+code, nil, bearer, plan.MaxLessonBytes)
+	if err != nil {
+		return plan.Lesson{}, err
+	}
+	return planResult(status, body, "", code)
+}
+
 // StartPlan pins the exact reviewed response. It does not retry a mutation or
 // modify local files; callers must handle an unconfirmed request explicitly.
 func (c *Client) StartPlan(ctx context.Context, bearer string, reviewed plan.Lesson) (plan.Lesson, error) {
@@ -53,7 +65,13 @@ func (c *Client) StartPlan(ctx context.Context, bearer string, reviewed plan.Les
 
 func planResult(status int, body []byte, course, slug string) (plan.Lesson, error) {
 	if status == 200 {
-		lesson, err := plan.DecodeLesson(body, course, slug)
+		var lesson plan.Lesson
+		var err error
+		if course == "" {
+			lesson, err = plan.DecodeCodeLesson(body, slug)
+		} else {
+			lesson, err = plan.DecodeLesson(body, course, slug)
+		}
 		if err != nil {
 			return plan.Lesson{}, ErrProtocol
 		}

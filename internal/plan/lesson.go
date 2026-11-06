@@ -27,6 +27,7 @@ type Lesson struct {
 	LessonVersion int64          `json:"lesson_version"`
 	CourseSlug    string         `json:"course_slug"`
 	LessonSlug    string         `json:"lesson_slug"`
+	LessonCode    string         `json:"lesson_code,omitempty"`
 	Missions      []LocalMission `json:"missions"`
 }
 
@@ -49,8 +50,24 @@ func ValidSlug(s string) bool { return slugPattern.MatchString(s) }
 // DecodeLesson rejects ambiguous JSON, wrong request identity, altered source or
 // check definitions and cross-lesson references before returning usable data.
 func DecodeLesson(raw []byte, course, slug string) (Lesson, error) {
+	if !ValidSlug(course) || !ValidSlug(slug) {
+		return Lesson{}, ErrInvalid
+	}
+	return decodeLesson(raw, course, slug, "")
+}
+
+// DecodeCodeLesson requires the response to name the exact requested curriculum
+// code; only validated canonical slugs can then be used for an explicit start.
+func DecodeCodeLesson(raw []byte, code string) (Lesson, error) {
+	if !ValidLessonCode(code) {
+		return Lesson{}, ErrInvalid
+	}
+	return decodeLesson(raw, "", "", code)
+}
+
+func decodeLesson(raw []byte, course, slug, code string) (Lesson, error) {
 	var out Lesson
-	if len(raw) == 0 || len(raw) > MaxLessonBytes || !utf8.Valid(raw) || !ValidSlug(course) || !ValidSlug(slug) {
+	if len(raw) == 0 || len(raw) > MaxLessonBytes || !utf8.Valid(raw) {
 		return out, ErrInvalid
 	}
 	d := json.NewDecoder(bytes.NewReader(raw))
@@ -63,7 +80,10 @@ func DecodeLesson(raw []byte, course, slug string) (Lesson, error) {
 	}
 	d = json.NewDecoder(bytes.NewReader(raw))
 	d.DisallowUnknownFields()
-	if d.Decode(&out) != nil || out.CourseSlug != course || out.LessonSlug != slug || !idPattern.MatchString(out.LessonID) || out.LessonVersion < 1 || len(out.Missions) < 1 || len(out.Missions) > 16 {
+	if d.Decode(&out) != nil || !ValidSlug(out.CourseSlug) || !ValidSlug(out.LessonSlug) || !idPattern.MatchString(out.LessonID) || out.LessonVersion < 1 || len(out.Missions) < 1 || len(out.Missions) > 16 {
+		return Lesson{}, ErrInvalid
+	}
+	if out.LessonCode != "" && !ValidLessonCode(out.LessonCode) || code != "" && out.LessonCode != code || code == "" && (out.CourseSlug != course || out.LessonSlug != slug) {
 		return Lesson{}, ErrInvalid
 	}
 	seen := map[string]bool{}
@@ -86,7 +106,7 @@ func DecodeLesson(raw []byte, course, slug string) (Lesson, error) {
 
 func lessonField(s string) bool {
 	switch s {
-	case "lesson_id", "lesson_version", "course_slug", "lesson_slug", "missions", "block_id", "plan":
+	case "lesson_id", "lesson_version", "course_slug", "lesson_slug", "lesson_code", "missions", "block_id", "plan":
 		return true
 	}
 	return field(s)

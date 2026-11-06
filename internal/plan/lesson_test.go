@@ -75,3 +75,22 @@ func FuzzLessonPlan(f *testing.F) {
 		}
 	})
 }
+
+func TestCodeResponseMustBindRequestedCode(t *testing.T) {
+	raw := strings.Replace(sampleLesson, `"lesson_slug":"05.1"`, `"lesson_slug":"canonical-lesson","lesson_code":"05.1"`, 1)
+	p, err := DecodeCodeLesson([]byte(raw), "05.1")
+	if err != nil || p.LessonSlug != "canonical-lesson" {
+		t.Fatal(p, err)
+	}
+	if _, err := DecodeCodeLesson([]byte(raw), "05.2"); err == nil {
+		t.Fatal("wrong code accepted")
+	}
+	if _, err := DecodeCodeLesson([]byte(sampleLesson), "05.1"); err == nil {
+		t.Fatal("missing code accepted")
+	}
+	for _, code := range []string{"5.1", "05.0", "05.01", "../05.1", "05.1?x=y", "05.1/other"} {
+		if ValidLessonCode(code) {
+			t.Fatal("invalid code", code)
+		}
+	}
+}
