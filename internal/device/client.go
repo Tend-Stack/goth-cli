@@ -195,12 +195,21 @@ func (c *Client) requestBearer(ctx context.Context, path string, payload any, be
 	if err != nil {
 		return 0, nil, 0, ErrProtocol
 	}
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Origin+path, bytes.NewReader(body))
+	return c.requestJSON(ctx, http.MethodPost, path, body, bearer, 8192)
+}
+
+// Fixed callers choose the method, endpoint and response limit. Origin and
+// redirect policy are established by New; no server-provided URL is followed.
+func (c *Client) requestJSON(ctx context.Context, method, path string, body []byte, bearer string, limit int64) (int, []byte, int, error) {
+	r, err := http.NewRequestWithContext(ctx, method, c.Origin+path, bytes.NewReader(body))
 	if err != nil {
 		return 0, nil, 0, ErrProtocol
 	}
 	r.Header.Set("Accept", MediaType)
-	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Accept-Encoding", "identity")
+	if method == http.MethodPost {
+		r.Header.Set("Content-Type", "application/json")
+	}
 	r.Header.Set("User-Agent", "goth-cli")
 	if bearer != "" {
 		r.Header.Set("Authorization", "Bearer "+bearer)
@@ -214,11 +223,14 @@ func (c *Client) requestBearer(ctx context.Context, path string, payload any, be
 	}
 	defer response.Body.Close()
 	media, _, err := mime.ParseMediaType(response.Header.Get("Content-Type"))
-	if err != nil || media != MediaType {
+	if err != nil || media != MediaType || len(response.Header.Values("Content-Type")) != 1 || len(response.Header.Values("Content-Encoding")) != 0 {
 		return 0, nil, 0, ErrProtocol
 	}
-	raw, err := io.ReadAll(io.LimitReader(response.Body, 8193))
-	if err != nil || len(raw) > 8192 {
+	raw, err := io.ReadAll(io.LimitReader(response.Body, limit+1))
+	if ctx.Err() != nil {
+		return 0, nil, 0, ctx.Err()
+	}
+	if err != nil || int64(len(raw)) > limit {
 		return 0, nil, 0, ErrProtocol
 	}
 	retry := 0
