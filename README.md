@@ -120,11 +120,41 @@ tested; macOS/Windows native acceptance remains pending. Cross-builds do not pro
 Windows ACLs, directory-flush durability, reparse-point handling or process-tree
 cancellation. Production terminal routes remain disabled until acceptance.
 
+## Local check runner (in development)
+
+The workspace runner implements file assertions, explicit loopback HTTP/htmx
+probes, Go package tests and verification of generated Templ files. It is not yet
+exposed as `goth check`: signed evidence transport and command wiring remain work.
+Local results do not update lesson completion or award credit.
+
+Native checks execute project code with the user's OS permissions. Ten-minute
+whole-run and per-check deadlines, 64 KiB subprocess output caps and process-group
+cleanup are not a security sandbox or hard memory/disk/network limits. Environment
+filtering avoids passing caller credentials; code can still read the user's disk.
+Windows arbitrary-code checks are disabled pending native process-tree acceptance.
+Go/runtime temporary files use owned `.git/gothstack/check-*` scratch, removed
+after ordinary completion or cancellation. If the CLI is forcibly killed and
+scratch remains, workspace operations stop until you inspect the prior process
+and remove its scratch safely. A crash is not proof that its children stopped.
+HTTP targets require an explicit literal-loopback address and port; no proxy,
+redirect, cookie jar, automatic server startup or arbitrary authored header is used.
+Status and optional body assertions use exact comparisons. Raw diagnostics are
+local-only and excluded from serialized result data.
+
+Go tests use JSON streaming with uncached results. Templ uses the project's tool
+directive and `go tool templ generate -check`, requiring a generator that supports
+that flag (verified with v0.3.1100). The command checks current generated files
+without rewriting them. Go uses readonly module settings, a local toolchain and
+`GOWORK=off`; private proxy/workspace configuration is not inherited implicitly.
+
 ## Development checks
 
 In the full GoTHStack workspace, root `make check` includes this module's tests,
 vet, pinned Staticcheck and build. From the standalone public export, run
 `go test ./...`, `go vet ./...` and `go build ./goth`.
+The full repository passes its pinned tool module through
+`GOTH_CLI_TEST_TEMPL_MODULE` for real Templ checks. Standalone tests skip that
+fixture unless an owned module with a Templ tool directive is explicitly supplied.
 `go -C cli test -race ./...` also checks polling, strict parsing, cancellation,
 redirect refusal, file safety, locking and keychain failure handling.
 

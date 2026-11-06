@@ -12,6 +12,7 @@ import (
 
 	"gothstack.com/cli/internal/credentials"
 	"gothstack.com/cli/internal/device"
+	"gothstack.com/cli/internal/workspace"
 )
 
 func TestStartInvalidReferenceBeforeCredentials(t *testing.T) {
@@ -58,6 +59,32 @@ func TestStartActualServer(t *testing.T) {
 			t.Fatal(code, out.String(), stderr.String())
 		}
 	}
+	client, e := device.New(origin)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer client.Close()
+	p, e := client.FetchCode(t.Context(), grant.AccessToken, "05.1")
+	if e != nil {
+		t.Fatal(e)
+	}
+	w, e := workspace.Open(t.Context(), dir)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer w.Close()
+	report, e := w.RunChecks(t.Context(), origin, p, "")
+	if e != nil || len(report.Results) != 1 || report.Results[0].Status != "fail" {
+		t.Fatal("unfinished learner work", report, e)
+	}
+	if e = os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module lesson\n\ngo 1.27.3\n"), 0644); e != nil {
+		t.Fatal(e)
+	}
+	report, e = w.RunChecks(t.Context(), origin, p, "")
+	if e != nil || report.Results[0].Status != "pass" {
+		t.Fatal("finished file assertion", report, e)
+	}
+	w.Close()
 	b, e := os.ReadFile(filepath.Join(dir, "main.go"))
 	if e != nil || string(b) != "package main\n" {
 		t.Fatal("starter", string(b), e)

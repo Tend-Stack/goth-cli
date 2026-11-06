@@ -34,3 +34,10 @@ func syncDirectory(root *os.Root, path string) error {
 	defer f.Close()
 	return f.Sync()
 }
+
+func nativeChecksSupported() bool { return true }
+func stopCheckProcess(cmd *exec.Cmd) {
+	if cmd.Process != nil {
+		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	}
+}

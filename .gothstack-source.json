@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "source_commit": "89c8c1afbdc7992905b1bac06eb2212f45f4fee2",
+  "source_commit": "5b4ed67f4f2d3e2c944bb792646949da8303ae8f",
   "files_sha256": {
-    "README.md": "f517cd4d09698f32536d9a559031117676e53a3614e243991aa440d1e3844249",
+    "README.md": "9848afdc3cb6d2914e4b7701c58f6562afd3f804875c88c30fe8b8bb60a2715c",
     "go.mod": "81716f0e8f7c6a9bb1a8eb8d2b3f4174d8eac5594a18077ee1bf1655622980c3",
     "go.sum": "4fcba4e0b768a4c4166473043681c1a966fe2e6b114593ba20a4567d9f6c400a",
     "goth/doctor.go": "566ec4719baec934e6f19917a7a2b77295085009f29519aa99a9abfffa219d14",
@@ -10,7 +10,7 @@
     "goth/main.go": "eec23788bcc24013b3628e6cad60f68bbec591f513dcab78f7235f72c65f319a",
     "goth/main_test.go": "332fbe3b6b9cc6e1038114178417d61ecb617b3c6774252f5324110c0663cd95",
     "goth/start.go": "a8855b925969b24f1e84d718708d644520f0ea2d872e311db13a5c8555a4de55",
-    "goth/start_test.go": "a8bbca2c6f532039cc634c0068071f9cc27a7a3c4e0ff79d796ba09209fdd032",
+    "goth/start_test.go": "4b4b0c677d2aad747b4ca418750c6f3588c53d3eaf261b0994c694a3ef04497f",
     "internal/credentials/files_unix.go": "facd6e4a500c449abf4d598d68fa383162653e3e50c9e9f06dd016b1a96f59f8",
     "internal/credentials/files_windows.go": "cf14b57bb5ba973602496d2f4915b893ee4afee6fe120fd75a11293f1ac8ac91",
     "internal/credentials/keychain.go": "3e7f446fd574dc95ad2ef3dc990fd808c883022050e1d1363bfcacc43e69b944",
@@ -31,11 +31,13 @@
     "internal/plan/lesson_test.go": "361fa5fc1654d3b104d25aaee4a371b0420618e524a55cb5a093175f2a817a27",
     "internal/plan/mission_generated.go": "8904700d45e1a9dcc3481e05f29dca504c3a817b95064747146a1b96b235b8d7",
     "internal/plan/spec_generated.go": "6272816857459d933ad55336e8ec430dae3808fafc4bd0e0ca49f0dd363a9140",
+    "internal/workspace/check.go": "cd3678818ce35aefb995ba1f9e8091a6beb1617784c0732e14b4d273caef66f2",
+    "internal/workspace/check_test.go": "00a233ab9b06e56d1124a6e37ce44be254e79483100a726badbf3aa5a16a557b",
     "internal/workspace/git.go": "00251e93c7b9a1cf9807fda55ad79292f6b91b763601c5453b32d24d0c052f7d",
     "internal/workspace/git_test.go": "972f36cb678ece9816c6ac036c6a9fd5735a5492f5c677dae79cebd4cb8ed3fc",
-    "internal/workspace/platform_unix.go": "87aee5fdcf04b3fd4df14953d83b3dff5b2ed289d815ea4fbbd3b9be28421579",
-    "internal/workspace/platform_windows.go": "1a36c3887ee5b7dd716b8b7dfd261718202a658b08be1f258eb7f2c6074e315b",
-    "internal/workspace/workspace.go": "dde5e96f9ce70d107007f7f907d6639fe71b54edbb699cac44ab67c87d1f6566",
+    "internal/workspace/platform_unix.go": "2d2ccc9ee79e8895a6eb04535e48061ce41b8ac638fd437af6e58932ce823196",
+    "internal/workspace/platform_windows.go": "9119ab6fe1b785fc0ee08f983b440f08591eef23111f90d5fec70c4995304f67",
+    "internal/workspace/workspace.go": "ac8a5d6e19f1ea3b8b7cb0adad777fd1781ef26f84ceaf1351767e30b876860f",
     "internal/workspace/workspace_test.go": "804be30aa9e44df68cd18f8105a86087dd3176b30766837346ac43c3a6a253aa"
   }
 }

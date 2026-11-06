@@ -129,6 +129,9 @@ func Open(ctx context.Context, dir string) (_ *Workspace, err error) {
 	if err = lock(f); err != nil {
 		return nil, ErrBusy
 	}
+	if err = w.checkScratchClean(); err != nil {
+		return nil, err
+	}
 	if err = w.recover(); err != nil {
 		return nil, err
 	}
@@ -170,6 +173,9 @@ func (w *Workspace) directory(p string, create bool) error {
 	return nil
 }
 func (w *Workspace) read(p string, limit int) (snapshot, error) {
+	return w.inspect(p, limit, true)
+}
+func (w *Workspace) inspect(p string, limit int, contents bool) (snapshot, error) {
 	// Missing parents mean a missing file; present parents must be plain directories.
 	parent := path.Dir(p)
 	if parent != "." {
@@ -187,8 +193,11 @@ func (w *Workspace) read(p string, limit int) (snapshot, error) {
 	if errors.Is(e, os.ErrNotExist) {
 		return snapshot{}, nil
 	}
-	if e != nil || !regular(i) || i.Size() > int64(limit) {
+	if e != nil || !regular(i) || contents && i.Size() > int64(limit) {
 		return snapshot{}, ErrWorkspace
+	}
+	if !contents {
+		return snapshot{Exists: true, Mode: uint32(i.Mode().Perm())}, nil
 	}
 	f, e := w.root.OpenFile(p, os.O_RDONLY|noFollow, 0)
 	if e != nil {

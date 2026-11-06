@@ -17,3 +17,8 @@ func boundGit(cmd *exec.Cmd) {}
 // Windows directory flush durability requires native acceptance; file writes
 // still call Sync. Do not describe cross-builds as crash-recovery proof there.
 func syncDirectory(*os.Root, string) error { return nil }
+
+// Native arbitrary-code checks remain gated until process-tree cancellation is
+// implemented and exercised on Windows. File and loopback assertions still work.
+func nativeChecksSupported() bool { return false }
+func stopCheckProcess(*exec.Cmd)  {}
