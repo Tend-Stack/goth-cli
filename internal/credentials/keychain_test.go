@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -75,14 +76,38 @@ func TestNativeKeychainOwnedRoundtrip(t *testing.T) {
 		t.Fatal("fixture collision; refusing to touch existing credential")
 	}
 	key := s.key
+	// Optional owner journal survives interruption. The acceptance driver refuses
+	// another run until any retained synthetic entry has been reviewed/removed.
+	journal := os.Getenv("GOTH_CLI_NATIVE_KEYCHAIN_JOURNAL")
+	if journal != "" {
+		file, err := os.OpenFile(journal, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			t.Fatal("fixture journal unavailable")
+		}
+		err = json.NewEncoder(file).Encode(map[string]string{"purpose": "owned native acceptance fixture", "service": keychainService, "key": key, "origin": origin})
+		if err == nil {
+			err = file.Sync()
+		}
+		closeErr := file.Close()
+		if err != nil || closeErr != nil {
+			t.Fatal("could not persist fixture ownership")
+		}
+	}
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
 		defer cancel()
 		if err := k.Delete(ctx, key); err != nil && !errors.Is(err, ErrMissing) {
 			t.Error("owned fixture cleanup failed:", err)
+			return
 		}
 		if _, err := k.Get(ctx, key); !errors.Is(err, ErrMissing) {
 			t.Error("owned fixture was not removed")
+			return
+		}
+		if journal != "" {
+			if err := os.Remove(journal); err != nil {
+				t.Error("fixture journal cleanup failed:", err)
+			}
 		}
 	}()
 	if err = s.Save(t.Context(), recordGrant(), "owned acceptance fixture", time.Now().Add(time.Hour), false); err != nil {

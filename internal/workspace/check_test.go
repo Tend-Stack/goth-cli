@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"gothstack.com/cli/internal/plan"
 )
@@ -216,51 +215,6 @@ func TestCheckRealGoAndBoundaries(t *testing.T) {
 		})
 	}
 }
-func TestCheckReapsBackgroundChild(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skip("Linux process-state proof; native other platforms pending")
-	}
-	source := `package lesson
-import("testing";"os";"os/exec";"strconv";"time")
-func TestChild(t *testing.T){
- if os.Getenv("OWNED_CHILD")=="1" {time.Sleep(45*time.Second);return}
- cmd:=exec.Command(os.Args[0],"-test.run=^TestChild$");cmd.Env=append(os.Environ(),"OWNED_CHILD=1")
- if err:=cmd.Start();err!=nil{t.Fatal(err)}
- if err:=os.WriteFile("child.pid",[]byte(strconv.Itoa(cmd.Process.Pid)),0600);err!=nil{t.Fatal(err)}
-}
-`
-	p := checkFixture(t, []plan.Check{{ID: "child", Kind: "go_test", TimeoutSeconds: 30, GoTest: &plan.GoTest{Packages: []string{"."}}}}, plan.File{Path: "go.mod", Content: "module lesson\n\ngo 1.27.3\n"}, plan.File{Path: "lesson_test.go", Content: source})
-	w, r := runChecksTest(t, p, "")
-	if r.Results[0].Status != "pass" {
-		t.Fatal(r.Results[0].Reason)
-	}
-	raw, e := os.ReadFile(filepath.Join(w.git.dir, "child.pid"))
-	if e != nil {
-		t.Fatal(e)
-	}
-	pid, e := strconv.Atoi(string(raw))
-	if e != nil || pid <= 1 {
-		t.Fatal("invalid fixture PID")
-	}
-	for range 20 {
-		stat, e := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
-		if os.IsNotExist(e) {
-			return
-		}
-		if e != nil {
-			t.Fatal(e)
-		}
-		_, rest, _ := strings.Cut(string(stat), ") ")
-		if strings.HasPrefix(rest, "Z ") {
-			return
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
-	process, _ := os.FindProcess(pid)
-	_ = process.Kill()
-	t.Fatal("owned background child survived check cleanup")
-}
-
 func TestCheckRealTemplDoesNotRewrite(t *testing.T) {
 	if !nativeChecksSupported() {
 		t.Skip("native execution not accepted")

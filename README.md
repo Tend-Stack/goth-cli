@@ -124,9 +124,9 @@ cancellation. Production terminal routes remain disabled until acceptance.
 
 The workspace runner implements file assertions, explicit loopback HTTP/htmx
 probes, Go package tests and verification of generated Templ files. It is exposed
-through `goth check`; native platform acceptance and browser completion integration
-remain work.
-Local results do not update lesson completion or award credit.
+through `goth check`. Accepted results sync to the lesson player; the ordinary
+Complete action rechecks them and awards credit once. Uploading alone never
+completes a step or awards XP. Native macOS/Windows acceptance remains pending.
 
 Native checks execute project code with the user's OS permissions. Ten-minute
 whole-run and per-check deadlines, 64 KiB subprocess output caps and process-group
@@ -199,5 +199,31 @@ A completed failing or partial run uploads its results and exits 1; all passing
 results with a confirmed receipt exit 0. Cancellation/incomplete runs do not
 upload. An unconfirmed response is reported explicitly, with no automatic retry.
 Uploads are limited to one per account per 30 seconds and do not award XP or
-complete a lesson. Browser mission integration and native platform acceptance
-remain pending; production terminal routes remain disabled.
+complete a lesson. The browser shows accepted results and offers ordinary
+completion. Native macOS/Windows acceptance remains pending; production terminal
+routes remain disabled.
+
+## Maintainer native acceptance
+
+From the authorized application checkout, run:
+
+```sh
+python3 -B scripts/accept_cli_native.py --expect-os linux
+# On macOS itself, with its normal desktop keychain available:
+python3 -B scripts/accept_cli_native.py --expect-os darwin
+```
+
+The driver pins Go, requires the compiler host/target to match the current OS,
+rejects skipped required tests, exercises the native credential store, real
+Go/Templ/file/HTTP checks and a built executable against the loopback application.
+Its process proof covers success, failure, cancellation, output limits and deadlines,
+with a positive live-child control so a broken process observer cannot pass.
+A Linux job on a Mac runner does not satisfy Darwin acceptance.
+
+Each run creates one uniquely named synthetic keychain entry, records its ownership
+before writing, and verifies deletion. Results replace the previous report for that
+OS/architecture under the application's test-results directory. A failed or interrupted run
+retains its owned files and journal for process-aware cleanup and blocks another run;
+never remove an old lock based on age alone. Native Windows execution remains gated
+until process-tree handling and acceptance are implemented. This proof neither
+activates production routes nor makes local results execution attestation.
