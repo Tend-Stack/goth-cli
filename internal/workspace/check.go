@@ -456,3 +456,50 @@ func (w *Workspace) checkScratchClean() error {
 	}
 	return nil
 }
+
+// LessonReference reads only goth's validated private state. The caller must
+// freshly fetch/authorize this reference; local metadata grants no authority.
+func (w *Workspace) LessonReference(origin string) (string, string, error) {
+	disk, e := w.read(statePath, maxStateBytes)
+	if e != nil {
+		return "", "", e
+	}
+	var s state
+	if !disk.Exists || strictJSON(disk.Content, &s) != nil || !validState(s) || s.Origin != origin {
+		return "", "", ErrNotStarted
+	}
+	return s.Course, s.Lesson, nil
+}
+
+// Evidence converts only the typed, bounded report fields. Raw local diagnostic
+// output cannot cross this explicit projection, even if a command prints secrets.
+func (r CheckReport) Evidence(p plan.Lesson, token, submission string) (plan.Evidence, error) {
+	digest, e := p.Digest()
+	if e != nil {
+		return plan.Evidence{}, e
+	}
+	out := plan.Evidence{Schema: 1, SubmissionID: submission, TokenID: token, CourseSlug: p.CourseSlug, LessonSlug: p.LessonSlug, LessonID: p.LessonID, LessonVersion: p.LessonVersion, PlanSHA256: digest, StartedUnix: r.StartedUnix, FinishedUnix: r.FinishedUnix, GitCommit: r.GitCommit, GitDirty: r.GitDirty, Tools: []plan.EvidenceTool{}, Missions: []plan.EvidenceMission{}}
+	for _, t := range r.Tools {
+		out.Tools = append(out.Tools, plan.EvidenceTool{ID: t.ID, Status: t.Status, Version: t.Version})
+	}
+	offset := 0
+	for _, m := range p.Missions {
+		result := plan.EvidenceMission{BlockID: m.BlockID, CheckID: m.CheckID, CheckVersion: m.CheckVersion, CheckSHA256: m.CheckSHA256, Results: []plan.EvidenceResult{}}
+		for _, c := range m.Plan.Checks {
+			if offset >= len(r.Results) {
+				return plan.Evidence{}, plan.ErrInvalid
+			}
+			item := r.Results[offset]
+			offset++
+			if item.BlockID != m.BlockID || item.CheckID != c.ID {
+				return plan.Evidence{}, plan.ErrInvalid
+			}
+			result.Results = append(result.Results, plan.EvidenceResult{ID: item.CheckID, Status: item.Status, Reason: item.Reason, DurationMS: item.DurationMS})
+		}
+		out.Missions = append(out.Missions, result)
+	}
+	if offset != len(r.Results) || out.Validate() != nil {
+		return plan.Evidence{}, plan.ErrInvalid
+	}
+	return out, nil
+}

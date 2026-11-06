@@ -387,3 +387,14 @@ func TestCheckExistenceDoesNotReadLargeFiles(t *testing.T) {
 		t.Fatal(r, err)
 	}
 }
+
+func TestCheckOpenDoesNotInitializeUnrelatedDirectory(t *testing.T) {
+	dir := t.TempDir()
+	if w, e := OpenStarted(t.Context(), dir); e == nil {
+		w.Close()
+		t.Fatal("unstarted directory opened")
+	}
+	if _, e := os.Stat(filepath.Join(dir, ".git")); !os.IsNotExist(e) {
+		t.Fatal("check initialized a repository", e)
+	}
+}

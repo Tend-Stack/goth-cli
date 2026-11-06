@@ -123,8 +123,9 @@ cancellation. Production terminal routes remain disabled until acceptance.
 ## Local check runner (in development)
 
 The workspace runner implements file assertions, explicit loopback HTTP/htmx
-probes, Go package tests and verification of generated Templ files. It is not yet
-exposed as `goth check`: signed evidence transport and command wiring remain work.
+probes, Go package tests and verification of generated Templ files. It is exposed
+through `goth check`; native platform acceptance and browser completion integration
+remain work.
 Local results do not update lesson completion or award credit.
 
 Native checks execute project code with the user's OS permissions. Ten-minute
@@ -177,3 +178,25 @@ GOTH_CLI_BINARY=tests/results/goth-client python3 -B scripts/browser_cli_check.p
 `check`, signed evidence, prebuilt release archives and full M5
 security acceptance remain roadmap work. CLI signatures authenticate an account;
 they are never execution attestation.
+
+### Run checks for a started workspace
+
+```sh
+goth check --workspace ./pocketpilot
+# For a lesson with HTTP probes, start your app yourself and select its loopback URL:
+goth check --workspace ./pocketpilot --probe-url http://127.0.0.1:8080
+```
+
+The command uses the lesson saved by `goth start` and fetches fresh authorization
+before executing. It runs project code as your OS user, with access to your files
+and network; this is not a sandbox. It requires an existing started workspace.
+Use `--server`, `--storage` and `--config-dir` as with login/start.
+
+Only typed check results, tool versions, timing, Git commit/dirty metadata and
+lesson/plan identities are signed and uploaded. Compiler output remains local.
+A completed failing or partial run uploads its results and exits 1; all passing
+results with a confirmed receipt exit 0. Cancellation/incomplete runs do not
+upload. An unconfirmed response is reported explicitly, with no automatic retry.
+Uploads are limited to one per account per 30 seconds and do not award XP or
+complete a lesson. Browser mission integration and native platform acceptance
+remain pending; production terminal routes remain disabled.

@@ -46,7 +46,7 @@ func TestStartActualServer(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	grant := device.Grant{AccessToken: os.Getenv("GOTHSTACK_CLI_TEST_TOKEN"), SigningSecret: strings.Repeat("A", 43), TokenID: "cli_01ARZ3NDEKTSV4RRFFQ69G5FAV", TokenType: "Bearer", Scope: device.Scope, ExpiresIn: 3600}
+	grant := device.Grant{AccessToken: os.Getenv("GOTHSTACK_CLI_TEST_TOKEN"), SigningSecret: os.Getenv("GOTHSTACK_CLI_TEST_SIGNING"), TokenID: os.Getenv("GOTHSTACK_CLI_TEST_TOKEN_ID"), TokenType: "Bearer", Scope: device.Scope, ExpiresIn: 3600}
 	if e = s.Save(t.Context(), grant, "integration terminal", time.Now().Add(time.Hour), false); e != nil {
 		s.Close()
 		t.Fatal(e)
@@ -85,6 +85,15 @@ func TestStartActualServer(t *testing.T) {
 		t.Fatal("finished file assertion", report, e)
 	}
 	w.Close()
+	var checkOut, checkErr bytes.Buffer
+	if code := run(t.Context(), []string{"check", "--server", origin, "--storage", "file", "--config-dir", config, "--workspace", dir}, &checkOut, &checkErr, keychain); code != 0 || !strings.Contains(checkOut.String(), "Evidence saved:") {
+		t.Fatal("real check command", code, checkOut.String(), checkErr.String())
+	}
+	for _, secret := range []string{grant.AccessToken, grant.SigningSecret} {
+		if strings.Contains(checkOut.String()+checkErr.String(), secret) {
+			t.Fatal("credential printed")
+		}
+	}
 	b, e := os.ReadFile(filepath.Join(dir, "main.go"))
 	if e != nil || string(b) != "package main\n" {
 		t.Fatal("starter", string(b), e)

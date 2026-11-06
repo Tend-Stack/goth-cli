@@ -39,7 +39,7 @@ func main() {
 }
 func run(ctx context.Context, args []string, out, stderr io.Writer, keychain credentials.Keychain) int {
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
-		fmt.Fprintln(out, "Usage: goth login [--server https://gothstack.com] [--label name] [--storage auto|file] [--config-dir path] [--replace]\n       goth doctor [--local] [--server https://gothstack.com] [--storage auto|file] [--config-dir path]\n       goth start <05.1|course/lesson> [--workspace path] [--server origin] [--storage auto|file] [--config-dir path]\n       goth version\n\nConnect a terminal by reviewing its code in your browser. No browser opens automatically.\n--replace overwrites local credentials; it does not revoke earlier server access.")
+		fmt.Fprintln(out, "Usage: goth login [--server https://gothstack.com] [--label name] [--storage auto|file] [--config-dir path] [--replace]\n       goth doctor [--local] [--server https://gothstack.com] [--storage auto|file] [--config-dir path]\n       goth start <05.1|course/lesson> [--workspace path] [--server origin] [--storage auto|file] [--config-dir path]\n       goth check [--workspace path] [--probe-url http://127.0.0.1:8080]\n       goth version\n\nConnect a terminal by reviewing its code in your browser. No browser opens automatically.\n--replace overwrites local credentials; it does not revoke earlier server access.")
 		return 0
 	}
 	if args[0] == "version" && len(args) == 1 {
@@ -51,6 +51,9 @@ func run(ctx context.Context, args []string, out, stderr io.Writer, keychain cre
 		}
 		fmt.Fprintln(out, "goth "+v)
 		return 0
+	}
+	if args[0] == "check" {
+		return runCheck(ctx, args[1:], out, stderr, keychain)
 	}
 	if args[0] == "start" {
 		return runStart(ctx, args[1:], out, stderr, keychain)

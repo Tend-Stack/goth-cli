@@ -79,7 +79,16 @@ func (p *Prepared) Branch() string { return p.branch }
 
 // Open requires an explicitly selected existing directory. It initializes only
 // when .git is absent; linked worktrees and symlinked Git directories are refused.
-func Open(ctx context.Context, dir string) (_ *Workspace, err error) {
+func Open(ctx context.Context, dir string) (*Workspace, error) {
+	return openWorkspace(ctx, dir, true)
+}
+
+// OpenStarted refuses to initialize an unrelated directory when checking.
+func OpenStarted(ctx context.Context, dir string) (*Workspace, error) {
+	return openWorkspace(ctx, dir, false)
+}
+
+func openWorkspace(ctx context.Context, dir string, initialize bool) (_ *Workspace, err error) {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, ErrWorkspace
@@ -105,6 +114,9 @@ func Open(ctx context.Context, dir string) (_ *Workspace, err error) {
 	w.git = g
 	info, err = root.Lstat(".git")
 	if errors.Is(err, os.ErrNotExist) {
+		if !initialize {
+			return nil, ErrNotStarted
+		}
 		if err = g.initialize(ctx); err != nil {
 			return nil, err
 		}
@@ -114,7 +126,7 @@ func Open(ctx context.Context, dir string) (_ *Workspace, err error) {
 	if err = w.directory(".git", false); err != nil {
 		return nil, err
 	}
-	if err = w.directory(meta, true); err != nil {
+	if err = w.directory(meta, initialize); err != nil {
 		return nil, err
 	}
 	f, err := root.OpenFile(meta+"/lock", os.O_RDWR|os.O_CREATE|noFollow, 0600)
